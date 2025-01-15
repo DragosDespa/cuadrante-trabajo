@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cuadrante de Trabajo Anual</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f9;
+      color: #333;
+    }
+    .login-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #007BFF;
+    }
+    .login-box {
+      background-color: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      width: 300px;
+    }
+    .login-box h2 {
+      margin-bottom: 20px;
+      color: #007BFF;
+    }
+    .login-box input {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    .login-box button {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+      background-color: #007BFF;
+      color: white;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    .login-box button:hover {
+      background-color: #0056b3;
+    }
+    .logout-button {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      background-color: #FF6347;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    .logout-button:hover {
+      background-color: #FF4500;
+    }
+    h1 {
+      text-align: center;
+      color: #444;
+      margin: 20px 0;
+      font-size: 2rem;
+      text-transform: uppercase;
+    }
+    .nav {
+      display: flex;
+      justify-content: center;
+      background-color: #007BFF;
+      padding: 10px;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+    .nav button {
+      margin: 0 5px;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      font-size: 1rem;
+      background-color: white;
+      color: #007BFF;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    .nav button.active {
+      background-color: #0056b3;
+      color: white;
+    }
+    .nav button:hover {
+      background-color: #0056b3;
+      color: white;
+    }
+    .month {
+      display: none;
+      padding: 20px;
+    }
+    .month.active {
+      display: block;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      text-align: center;
+      padding: 10px;
+      font-size: 0.9rem;
+    }
+    th {
+      background-color: #f0f0f0;
+      font-weight: bold;
+    }
+    select {
+      width: 100%;
+      border: none;
+      background: none;
+      font-size: 0.9rem;
+      text-align: center;
+      cursor: pointer;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+      background: transparent;
+    }
+    td.M {
+      background-color: #FFECB3;
+    }
+    td.T {
+      background-color: #BBDEFB;
+    }
+    td.N {
+      background-color: #C8E6C9;
+    }
+    td.D {
+      background-color: #FFCDD2;
+    }
+    .controls {
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    input[type="text"] {
+      width: 250px;
+      padding: 10px;
+      margin-right: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 1rem;
+    }
+    button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      font-size: 1rem;
+      background-color: #007BFF;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+<div class="login-container" id="loginContainer">
+  <div class="login-box">
+    <h2>Iniciar Sesión</h2>
+    <input type="text" id="username" placeholder="Usuario">
+    <input type="password" id="password" placeholder="Contraseña">
+    <button onclick="attemptLogin()">Ingresar</button>
+  </div>
+</div>
+<div id="appContainer" style="display: none;">
+  <button class="logout-button" onclick="logout()">Cerrar Sesión</button>
+  <h1>Cuadrante de Trabajo Anual</h1>
+  <div class="controls" id="adminControls">
+    <input type="text" id="workerName" placeholder="Nombre del trabajador">
+    <button type="button" onclick="addWorkerToAllMonths()">Añadir Trabajador</button>
+    <button type="button" onclick="clearData()">Borrar Datos</button>
+  </div>
+  <div class="nav" id="monthNav"></div>
+  <div id="monthsContainer"></div>
+</div>
+<script>
+  const users = {
+    admin: { username: "admin", password: "admin123", role: "admin" },
+    viewer: { username: "mantenimiento", password: "rampa7", role: "viewer" }
+  };
+  
+  let currentUser = null;
+
+  function attemptLogin() {
+    const username = document.getElementById("username").value;
+    const password = document.getElementById("password").value;
+    const user = Object.values(users).find(u => u.username === username && u.password === password);
+
+    if (user) {
+      currentUser = user;
+      localStorage.setItem("currentUser", JSON.stringify(currentUser));
+      alert(`Bienvenido, ${currentUser.username}`);
+      showApp();
+    } else {
+      alert("Credenciales incorrectas.");
+    }
+  }
+
+  function logout() {
+    localStorage.removeItem("currentUser");
+    location.reload();
+  }
+
+  function showApp() {
+    document.getElementById("loginContainer").style.display = "none";
+    document.getElementById("appContainer").style.display = "block";
+    initializeApp();
+  }
+
+  function checkSession() {
+    const savedUser = JSON.parse(localStorage.getItem("currentUser"));
+    if (savedUser) {
+      currentUser = savedUser;
+      showApp();
+    }
+  }
+
+  function initializeApp() {
+    if (currentUser.role === "viewer") {
+      document.getElementById("adminControls").style.display = "none";
+      document.querySelectorAll("select").forEach(select => {
+        select.disabled = true;
+      });
+    }
+
+    createMonthNav();
+    createMonthSections();
+    loadData();
+  }
+
+  const months = [
+    { name: "Enero", days: 31 },
+    { name: "Febrero", days: 28 },
+    { name: "Marzo", days: 31 },
+    { name: "Abril", days: 30 },
+    { name: "Mayo", days: 31 },
+    { name: "Junio", days: 30 },
+    { name: "Julio", days: 31 },
+    { name: "Agosto", days: 31 },
+    { name: "Septiembre", days: 30 },
+    { name: "Octubre", days: 31 },
+    { name: "Noviembre", days: 30 },
+    { name: "Diciembre", days: 31 }
+  ];
+
+  function saveData() {
+    const data = [];
+    document.querySelectorAll(".month tbody").forEach((tbody, monthIndex) => {
+      const workers = [];
+      tbody.querySelectorAll("tr").forEach(row => {
+        const worker = { name: row.children[0].textContent, schedule: [] };
+        for (let i = 1; i < row.children.length; i++) {
+          const select = row.children[i].querySelector("select");
+          worker.schedule.push({ value: select.value, className: select.value });
+        }
+        workers.push(worker);
+      });
+      data[monthIndex] = workers;
+    });
+    localStorage.setItem("workSchedule", JSON.stringify(data));
+  }
+
+  function loadData() {
+    const data = JSON.parse(localStorage.getItem("workSchedule"));
+    if (data) {
+      document.querySelectorAll(".month tbody").forEach((tbody, monthIndex) => {
+        data[monthIndex].forEach(worker => {
+          const row = document.createElement("tr");
+          const nameCell = document.createElement("td");
+          nameCell.textContent = worker.name;
+          row.appendChild(nameCell);
+
+          worker.schedule.forEach(schedule => {
+            const cell = document.createElement("td");
+            const select = document.createElement("select");
+            ["", "M", "T", "N", "D"].forEach(optionValue => {
+              const option = document.createElement("option");
+              option.value = optionValue;
+              option.textContent = optionValue;
+              if (schedule.value === optionValue) option.selected = true;
+              select.appendChild(option);
+            });
+
+            select.addEventListener("change", () => {
+              cell.className = select.value;
+              saveData();
+            });
+
+            cell.className = schedule.className; // Aplica el color
+            cell.appendChild(select);
+            row.appendChild(cell);
+          });
+
+          tbody.appendChild(row);
+        });
+      });
+    }
+  }
+
+  function clearData() {
+    localStorage.removeItem("workSchedule");
+    document.querySelectorAll(".month tbody").forEach(tbody => {
+      tbody.innerHTML = "";
+    });
+    alert("Todos los datos han sido eliminados.");
+  }
+
+  function createMonthNav() {
+    const nav = document.getElementById("monthNav");
+    months.forEach((month, index) => {
+      const button = document.createElement("button");
+      button.textContent = month.name;
+      button.onclick = () => showMonth(index);
+      if (index === 0) button.classList.add("active");
+      nav.appendChild(button);
+    });
+  }
+
+  function createMonthSections() {
+    const container = document.getElementById("monthsContainer");
+    months.forEach((month, index) => {
+      const monthDiv = document.createElement("div");
+      monthDiv.classList.add("month");
+      if (index === 0) monthDiv.classList.add("active");
+
+      const table = document.createElement("table");
+
+      const thead = document.createElement("thead");
+      const headerRow = document.createElement("tr");
+      const workerHeader = document.createElement("th");
+      workerHeader.textContent = "Trabajador";
+      headerRow.appendChild(workerHeader);
+
+      for (let i = 1; i <= month.days; i++) {
+        const th = document.createElement("th");
+        th.textContent = i;
+        headerRow.appendChild(th);
+      }
+      thead.appendChild(headerRow);
+      table.appendChild(thead);
+
+      const tbody = document.createElement("tbody");
+      table.appendChild(tbody);
+
+      monthDiv.appendChild(table);
+      container.appendChild(monthDiv);
+    });
+  }
+
+  function showMonth(index) {
+    document.querySelectorAll(".month").forEach((month, i) => {
+      month.classList.toggle("active", i === index);
+    });
+    document.querySelectorAll(".nav button").forEach((button, i) => {
+      button.classList.toggle("active", i === index);
+    });
+  }
+
+  function addWorkerToAllMonths() {
+    const workerName = document.getElementById("workerName").value;
+    if (workerName.trim() === '') {
+      alert('Por favor, ingresa un nombre de trabajador.');
+      return;
+    }
+
+    document.querySelectorAll(".month tbody").forEach(tbody => {
+      const row = document.createElement("tr");
+
+      const nameCell = document.createElement("td");
+      nameCell.textContent = workerName;
+      row.appendChild(nameCell);
+
+      const days = tbody.parentElement.querySelector("thead tr").children.length - 1;
+      for (let i = 0; i < days; i++) {
+        const cell = document.createElement("td");
+        const select = document.createElement("select");
+
+        ["", "M", "T", "N", "D"].forEach(optionValue => {
+          const option = document.createElement("option");
+          option.value = optionValue;
+          option.textContent = optionValue;
+          select.appendChild(option);
+        });
+
+        select.addEventListener("change", () => {
+          cell.className = select.value;
+          saveData();
+        });
+
+        cell.appendChild(select);
+        row.appendChild(cell);
+      }
+
+      tbody.appendChild(row);
+    });
+
+    document.getElementById("workerName").value = '';
+    saveData();
+  }
+
+  // Resto del código (no se modifica)
+  checkSession();
+</script>
+</body>
+</html>
